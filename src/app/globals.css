@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #09090b;
+  --foreground: #f4f4f5;
 }
 
 @theme inline {
@@ -12,15 +12,26 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+/* Markdown content styling */
+.prose-dark h1 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+.prose-dark h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+.prose-dark h3 { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+.prose-dark p { margin-bottom: 0.75rem; line-height: 1.7; color: #a1a1aa; }
+.prose-dark ul, .prose-dark ol { margin-bottom: 0.75rem; padding-left: 1.5rem; color: #a1a1aa; }
+.prose-dark li { margin-bottom: 0.25rem; }
+.prose-dark code { background: #27272a; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-size: 0.875rem; }
+.prose-dark pre { background: #18181b; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.75rem; }
+.prose-dark pre code { background: none; padding: 0; }
+.prose-dark a { color: #3b82f6; text-decoration: underline; }
+.prose-dark a:hover { color: #60a5fa; }
+.prose-dark table { width: 100%; margin-bottom: 0.75rem; border-collapse: collapse; }
+.prose-dark th, .prose-dark td { padding: 0.5rem; border-bottom: 1px solid #27272a; text-align: left; font-size: 0.875rem; color: #a1a1aa; }
+.prose-dark th { color: #f4f4f5; font-weight: 600; }
+.prose-dark blockquote { border-left: 3px solid #3b82f6; padding-left: 1rem; margin-bottom: 0.75rem; color: #71717a; }
+.prose-dark hr { border-color: #27272a; margin: 1.5rem 0; }
