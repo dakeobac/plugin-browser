@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChatPanel } from "./ChatPanel";
 import { SessionSidebar } from "./SessionSidebar";
@@ -17,6 +17,14 @@ export function AgentView() {
   const [sessionId, setSessionId] = useState("");
   const [chatKey, setChatKey] = useState(0); // force remount ChatPanel
   const [platform, setPlatform] = useState<Platform>("claude-code");
+  const [e2bAvailable, setE2bAvailable] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/sandboxes")
+      .then((res) => res.json())
+      .then((data) => setE2bAvailable(data.available === true))
+      .catch(() => {});
+  }, []);
 
   const systemPrompt = pluginName
     ? `You are working with the Claude Code plugin "${pluginName}". ${
@@ -122,6 +130,11 @@ export function AgentView() {
             >
               OpenCode
             </button>
+            {e2bAvailable && (
+              <span className="px-2.5 py-0.5 text-xs text-cyan-400/50 cursor-default" title="E2B sandboxes available via Agents page">
+                Cloud (E2B)
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
