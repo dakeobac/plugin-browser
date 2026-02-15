@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createOpenCodeSession, streamOpenCodePrompt } from "@/lib/opencode-process";
 import { saveSession } from "@/lib/session-store";
+import { createTrace, instrumentSend } from "@/lib/trace-store";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,14 @@ export async function POST(req: NextRequest) {
       const encoder = new TextEncoder();
       let closed = false;
 
-      function send(data: unknown) {
+      const trace = createTrace({
+        agentId: "chat",
+        agentName: "Chat (OpenCode)",
+        runtime: "opencode",
+        promptPreview: prompt.slice(0, 200),
+      });
+
+      function rawSend(data: unknown) {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -31,13 +39,15 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      send({ type: "status", message: "Starting OpenCode..." });
+      const send = instrumentSend(trace.traceId, rawSend);
+
+      rawSend({ type: "status", message: "Starting OpenCode..." });
 
       (async () => {
         try {
           // Create a new session
           const { sessionID } = await createOpenCodeSession(cwd);
-          send({ type: "system", session_id: sessionID, subtype: "session_created" });
+          rawSend({ type: "system", session_id: sessionID, subtype: "session_created" });
 
           // Save session metadata
           saveSession({
