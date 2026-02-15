@@ -106,6 +106,12 @@ export default function RootLayout({
                     Observatory
                   </Link>
                   <Link
+                    href="/ecosystem"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Ecosystem
+                  </Link>
+                  <Link
                     href="/wiki"
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
