@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { AgentRuntime } from "@/lib/types";
+import { useState, useEffect } from "react";
+import type { AgentRuntime, McpServerConfig } from "@/lib/types";
 
 interface AgentConfigForm {
   agentName: string;
@@ -11,6 +11,7 @@ interface AgentConfigForm {
   systemPrompt: string;
   initialPrompt: string;
   maxTurns: number;
+  mcpServerIds: string[];
 }
 
 export function AgentConfigDialog({
@@ -33,8 +34,17 @@ export function AgentConfigDialog({
     systemPrompt: "",
     initialPrompt: "",
     maxTurns: 0,
+    mcpServerIds: [],
   });
   const [launching, setLaunching] = useState(false);
+  const [mcpServers, setMcpServers] = useState<McpServerConfig[]>([]);
+
+  useEffect(() => {
+    fetch("/api/connectors")
+      .then((res) => res.json())
+      .then((data) => setMcpServers(data))
+      .catch(() => {});
+  }, []);
 
   const canLaunch = form.agentName.trim().length > 0 && form.initialPrompt.trim().length > 0;
 
@@ -144,6 +154,42 @@ export function AgentConfigDialog({
               className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
             />
           </div>
+
+          {/* MCP Servers */}
+          {mcpServers.length > 0 && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                MCP Servers <span className="text-muted-foreground">(optional)</span>
+              </label>
+              <div className="max-h-32 overflow-y-auto rounded-lg border border-border bg-card p-2 space-y-1">
+                {mcpServers.map((server) => (
+                  <label key={server.id} className="flex items-center gap-2 text-sm text-foreground cursor-pointer hover:bg-accent/50 rounded px-1 py-0.5">
+                    <input
+                      type="checkbox"
+                      checked={form.mcpServerIds.includes(server.id)}
+                      onChange={(e) => {
+                        setForm({
+                          ...form,
+                          mcpServerIds: e.target.checked
+                            ? [...form.mcpServerIds, server.id]
+                            : form.mcpServerIds.filter((id) => id !== server.id),
+                        });
+                      }}
+                      className="rounded border-border"
+                    />
+                    <span className="truncate">{server.displayName}</span>
+                    <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                      server.source === "plugin" ? "bg-blue-500/20 text-blue-400" :
+                      server.source === "settings" ? "bg-purple-500/20 text-purple-400" :
+                      "bg-amber-500/20 text-amber-400"
+                    }`}>
+                      {server.source}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Max Turns */}
           <div>
