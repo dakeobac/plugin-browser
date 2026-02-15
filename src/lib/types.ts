@@ -553,6 +553,98 @@ export interface ObservatoryStats {
   tracesByAgent: { agentId: string; agentName: string; count: number }[];
 }
 
+// --- Workflow types ---
+
+export type WorkflowTrigger =
+  | { type: "manual" }
+  | { type: "cron"; schedule: string }
+  | { type: "event"; eventPattern: string }
+  | { type: "webhook"; path: string };
+
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  agentId: string;
+  prompt: string;
+  dependsOn?: string[];
+  outputKey?: string;
+  condition?: string;
+  retries?: number;
+  timeout?: number;
+  runtime?: AgentRuntime;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  trigger: WorkflowTrigger;
+  steps: WorkflowStep[];
+  status: "active" | "inactive" | "running";
+  createdAt: string;
+  updatedAt: string;
+  lastRunAt?: string;
+  lastRunStatus?: "completed" | "error" | "running";
+}
+
+export interface WorkflowStepResult {
+  stepId: string;
+  status: "pending" | "running" | "completed" | "error" | "skipped";
+  startedAt?: string;
+  completedAt?: string;
+  output?: string;
+  error?: string;
+  traceId?: string;
+}
+
+export interface WorkflowRun {
+  id: string;
+  workflowId: string;
+  status: "running" | "completed" | "error";
+  startedAt: string;
+  completedAt?: string;
+  stepResults: Record<string, WorkflowStepResult>;
+  blackboard: Record<string, unknown>;
+  error?: string;
+}
+
+// --- Team types ---
+
+export interface TeamMember {
+  agentId: string;
+  role: string;
+  capabilities: string[];
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description: string;
+  supervisorId?: string;
+  members: TeamMember[];
+  status: "idle" | "active" | "error";
+  createdAt: string;
+}
+
+// --- Event bus + Blackboard types ---
+
+export interface BusEvent {
+  id: string;
+  type: string;
+  source: string;
+  timestamp: string;
+  payload: Record<string, unknown>;
+  consumed: boolean;
+}
+
+export interface BlackboardEntry {
+  key: string;
+  value: unknown;
+  updatedBy: string;
+  updatedAt: string;
+  version: number;
+}
+
 // --- Background Build types ---
 
 export type BuildStatus = "building" | "done" | "error";
