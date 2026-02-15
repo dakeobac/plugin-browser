@@ -388,6 +388,58 @@ export interface ParsedBriefSpec {
   confidence: "high" | "medium" | "low";
 }
 
+// --- Agent Registry types ---
+
+export type AgentRuntime = "claude-code" | "opencode";
+export type AgentStatus = "idle" | "running" | "paused" | "error" | "terminated";
+
+export interface McpServerRef {
+  id: string;
+  name: string;
+}
+
+export interface AgentConfig {
+  runtime: AgentRuntime;
+  cwd?: string;
+  systemPrompt?: string;
+  maxTurns?: number;
+  permissionMode?: string;
+  mcpServers?: McpServerRef[];
+  env?: Record<string, string>;
+}
+
+export interface AgentInstance {
+  id: string;
+  pluginSlug?: string;
+  agentName: string;
+  displayName: string;
+  status: AgentStatus;
+  runtime: AgentRuntime;
+  sessionId?: string;
+  startedAt?: string;
+  lastActivity?: string;
+  config: AgentConfig;
+  error?: string;
+}
+
+export interface AgentInstanceSummary {
+  id: string;
+  agentName: string;
+  displayName: string;
+  status: AgentStatus;
+  runtime: AgentRuntime;
+  pluginSlug?: string;
+  startedAt?: string;
+  lastActivity?: string;
+}
+
+export interface AgentLogEntry {
+  timestamp: string;
+  level: "info" | "warn" | "error" | "debug";
+  message: string;
+  data?: Record<string, unknown>;
+}
+
 // --- Background Build types ---
 
 export type BuildStatus = "building" | "done" | "error";
