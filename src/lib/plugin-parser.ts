@@ -44,9 +44,11 @@ export function loadPluginDetail(summary: PluginSummary): PluginDetail {
     } catch {}
   }
 
-  const commands = listFiles(path.join(pluginPath, "commands"), ".md");
-  const skills = listDirs(path.join(pluginPath, "skills"));
-  const agents = listFiles(path.join(pluginPath, "agents"), ".md");
+  const isOpenCode = summary.platform === "opencode";
+  const base = isOpenCode ? path.join(pluginPath, ".opencode") : pluginPath;
+  const commands = listFiles(path.join(base, "commands"), ".md");
+  const skills = listDirs(path.join(base, "skills"));
+  const agents = listFiles(path.join(base, "agents"), ".md");
 
   return {
     ...summary,

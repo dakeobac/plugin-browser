@@ -2,19 +2,10 @@
 
 import Link from "next/link";
 import type { PluginSummary } from "@/lib/types";
-
-const categoryColors: Record<string, string> = {
-  development: "bg-blue-500/20 text-blue-400",
-  productivity: "bg-green-500/20 text-green-400",
-  entertainment: "bg-purple-500/20 text-purple-400",
-  security: "bg-red-500/20 text-red-400",
-  testing: "bg-amber-500/20 text-amber-400",
-  database: "bg-cyan-500/20 text-cyan-400",
-  design: "bg-pink-500/20 text-pink-400",
-  monitoring: "bg-orange-500/20 text-orange-400",
-  deployment: "bg-teal-500/20 text-teal-400",
-  learning: "bg-indigo-500/20 text-indigo-400",
-};
+import { categoryColors } from "@/lib/category-colors";
+import { AntiFeatureBadgesCompact } from "./AntiFeatureBadges";
+import { UpdateBadge } from "./UpdateBadge";
+import { UserRatingCompact } from "./UserRating";
 
 function FeatureIcon({
   title,
@@ -24,7 +15,7 @@ function FeatureIcon({
   children: React.ReactNode;
 }) {
   return (
-    <span title={title} className="text-zinc-500">
+    <span title={title} className="text-muted-foreground">
       {children}
     </span>
   );
@@ -32,21 +23,31 @@ function FeatureIcon({
 
 export function PluginCard({ plugin }: { plugin: PluginSummary }) {
   const catClass =
-    categoryColors[plugin.category || ""] || "bg-zinc-700/50 text-zinc-400";
+    categoryColors[plugin.category || ""] || "bg-accent/50 text-muted-foreground";
 
   return (
     <Link
       href={`/plugin/${plugin.slug}`}
-      className="group flex flex-col rounded-lg border border-zinc-800 bg-zinc-900 p-4 transition-colors hover:border-zinc-700 hover:bg-zinc-800/80"
+      className="group flex flex-col rounded-lg border border-border bg-card p-4 transition-colors hover:border-border hover:bg-secondary/80"
     >
       <div className="mb-2 flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors">
+        <h3 className="font-semibold text-foreground group-hover:text-blue-400 transition-colors">
           {plugin.name}
         </h3>
         <div className="flex shrink-0 items-center gap-1.5">
+          <UpdateBadge updateInfo={plugin.updateInfo} />
           {plugin.version && (
-            <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-500 group-hover:bg-zinc-700">
+            <span className="rounded bg-secondary px-1.5 py-0.5 text-xs text-muted-foreground group-hover:bg-accent">
               v{plugin.version}
+            </span>
+          )}
+          {plugin.platform === "opencode" ? (
+            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-400">
+              OpenCode
+            </span>
+          ) : (
+            <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-medium text-orange-400">
+              Claude Code
             </span>
           )}
           {plugin.category && (
@@ -59,7 +60,7 @@ export function PluginCard({ plugin }: { plugin: PluginSummary }) {
         </div>
       </div>
 
-      <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-zinc-400">
+      <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
         {plugin.description}
       </p>
 
@@ -115,8 +116,18 @@ export function PluginCard({ plugin }: { plugin: PluginSummary }) {
             </span>
           </FeatureIcon>
         )}
+        <AntiFeatureBadgesCompact antiFeatures={plugin.antiFeatures} />
+        <UserRatingCompact rating={plugin.userData?.rating} />
+        {plugin.installInfo?.isInstalled && (
+          <span
+            className={`ml-auto h-2 w-2 rounded-full ${
+              plugin.installInfo.isEnabled ? "bg-green-500" : "bg-amber-500"
+            }`}
+            title={plugin.installInfo.isEnabled ? "Installed & enabled" : "Installed but disabled"}
+          />
+        )}
         {plugin.isSymlink && (
-          <span className="ml-auto text-zinc-600" title={`Symlink → ${plugin.symlinkTarget}`}>
+          <span className={`${plugin.installInfo?.isInstalled ? "" : "ml-auto "}text-muted-foreground`} title={`Symlink → ${plugin.symlinkTarget}`}>
             ~
           </span>
         )}

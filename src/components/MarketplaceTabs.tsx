@@ -23,8 +23,8 @@ export function MarketplaceTabs({
         onClick={() => onSelect(null)}
         className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
           active === null
-            ? "bg-blue-500/20 text-blue-400"
-            : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
+            ? "bg-primary/20 text-primary"
+            : "bg-secondary text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         }`}
       >
         All
@@ -36,8 +36,8 @@ export function MarketplaceTabs({
           onClick={() => onSelect(source.id)}
           className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
             active === source.id
-              ? "bg-blue-500/20 text-blue-400"
-              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
+              ? "bg-primary/20 text-primary"
+              : "bg-secondary text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
         >
           {source.name}

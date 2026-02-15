@@ -2,6 +2,11 @@ import fs from "fs";
 import path from "path";
 import { marketplaces, type MarketplaceSource } from "../../marketplace.config";
 import type { PluginSummary } from "./types";
+import { getInstallState } from "./install-state";
+import { detectAntiFeatures } from "./anti-features";
+import { getUpdateInfo, resetUpdateCache } from "./update-detection";
+import { loadAllUserData } from "./user-data";
+import { loadOpenCodePlugins } from "./opencode-loader";
 
 interface MarketplaceJson {
   name: string;
@@ -78,6 +83,7 @@ function isSymlink(filePath: string): { isLink: boolean; target?: string } {
 function loadPluginFromDir(
   pluginPath: string,
   marketplaceId: string,
+  marketplacePath: string,
   fallback: MarketplaceJson["plugins"][number]
 ): PluginSummary {
   let pluginJson: PluginJson | null = null;
@@ -106,12 +112,17 @@ function loadPluginFromDir(
   const homepage = pluginJson?.homepage || fallback.homepage;
   const keywords = pluginJson?.keywords || fallback.keywords || fallback.tags;
 
+  const installInfo = getInstallState(name, marketplacePath);
+  const antiFeatures = detectAntiFeatures(pluginPath);
+  const updateInfo = getUpdateInfo(installInfo.cliName, version);
+
   return {
     name,
     description,
     version,
     category,
     author,
+    platform: "claude-code" as const,
     marketplace: marketplaceId,
     slug: `${marketplaceId}--${name}`,
     hasCommands: commands.length > 0,
@@ -127,6 +138,9 @@ function loadPluginFromDir(
     symlinkTarget: symlink.target,
     homepage,
     keywords,
+    installInfo,
+    antiFeatures,
+    updateInfo,
   };
 }
 
@@ -151,7 +165,7 @@ function loadMarketplace(source: MarketplaceSource): PluginSummary[] {
     const pluginPath = resolvePluginPath(source.path, entry.source);
     if (!pluginPath) continue;
 
-    plugins.push(loadPluginFromDir(pluginPath, source.id, entry));
+    plugins.push(loadPluginFromDir(pluginPath, source.id, source.path, entry));
   }
 
   return plugins;
@@ -161,6 +175,8 @@ export function loadAllPlugins(): {
   plugins: PluginSummary[];
   sources: Array<MarketplaceSource & { count: number }>;
 } {
+  resetUpdateCache();
+  const userData = loadAllUserData();
   const allPlugins: PluginSummary[] = [];
   const sources: Array<MarketplaceSource & { count: number }> = [];
 
@@ -168,6 +184,19 @@ export function loadAllPlugins(): {
     const plugins = loadMarketplace(source);
     allPlugins.push(...plugins);
     sources.push({ ...source, count: plugins.length });
+  }
+
+  // Load OpenCode plugins
+  const ocPlugins = loadOpenCodePlugins();
+  allPlugins.push(...ocPlugins);
+  sources.push({ id: "opencode", name: "OpenCode", path: "", count: ocPlugins.length });
+
+  // Attach user data to each plugin
+  for (const plugin of allPlugins) {
+    const ud = userData[plugin.slug];
+    if (ud) {
+      plugin.userData = ud;
+    }
   }
 
   return { plugins: allPlugins, sources };
