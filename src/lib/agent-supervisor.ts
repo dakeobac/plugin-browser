@@ -189,7 +189,7 @@ export function getTeamStatus(teamId: string): {
     unconsumedOnly: false,
   });
 
-  const blackboard = readAllBlackboard();
+  const blackboard = readAllBlackboard(teamId);
 
   return { team, memberStatuses, recentEvents, blackboard };
 }

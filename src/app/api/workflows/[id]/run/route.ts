@@ -5,7 +5,7 @@ import { executeWorkflow } from "@/lib/workflow-engine";
 export const dynamic = "force-dynamic";
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -16,6 +16,15 @@ export async function POST(
 
   if (workflow.steps.length === 0) {
     return Response.json({ error: "Workflow has no steps" }, { status: 400 });
+  }
+
+  // Parse optional input from request body
+  let initialInput: Record<string, unknown> = {};
+  try {
+    const body = await req.json();
+    initialInput = body.input || {};
+  } catch {
+    /* no body or invalid JSON — proceed with empty input */
   }
 
   // Execute asynchronously — return run ID immediately
@@ -33,7 +42,7 @@ export async function POST(
 
       send({ type: "status", message: `Starting workflow: ${workflow.name}` });
 
-      executeWorkflow(workflow).then((run) => {
+      executeWorkflow(workflow, initialInput).then((run) => {
         send({ type: "workflow_run", run });
         send({ type: "done" });
         try { controller.close(); } catch { /* already closed */ }

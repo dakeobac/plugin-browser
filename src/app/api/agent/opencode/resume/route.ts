@@ -52,7 +52,6 @@ export async function POST(req: NextRequest) {
           // Stream the prompt response
           await streamOpenCodePrompt(sessionId, cwd, message, send);
         } catch (err) {
-          console.error("[OpenCode SSE] Error:", err);
           send({ type: "error", message: (err as Error).message });
         } finally {
           send({ type: "done" });

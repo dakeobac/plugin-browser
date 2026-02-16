@@ -141,14 +141,41 @@ function initSchema(db: Database.Database) {
 
     CREATE INDEX IF NOT EXISTS idx_messages_to ON messages(to_agent, read);
 
-    -- Phase 5: Blackboard
+    -- Phase 5: Blackboard (team-scoped)
     CREATE TABLE IF NOT EXISTS blackboard (
-      key TEXT PRIMARY KEY,
+      key TEXT NOT NULL,
+      team_id TEXT NOT NULL DEFAULT '_global',
       value TEXT NOT NULL,
       updated_by TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      version INTEGER NOT NULL DEFAULT 1
+      version INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (key, team_id)
     );
+  `);
+
+  // Migrate blackboard if it has old schema (key TEXT PRIMARY KEY without team_id)
+  migrateBlackboard(db);
+}
+
+function migrateBlackboard(db: Database.Database) {
+  const columns = db.prepare("PRAGMA table_info(blackboard)").all() as { name: string }[];
+  const hasTeamId = columns.some((c) => c.name === "team_id");
+  if (hasTeamId) return; // Already migrated
+
+  db.exec(`
+    ALTER TABLE blackboard RENAME TO blackboard_old;
+    CREATE TABLE blackboard (
+      key TEXT NOT NULL,
+      team_id TEXT NOT NULL DEFAULT '_global',
+      value TEXT NOT NULL,
+      updated_by TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      version INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (key, team_id)
+    );
+    INSERT INTO blackboard (key, team_id, value, updated_by, updated_at, version)
+      SELECT key, '_global', value, updated_by, updated_at, version FROM blackboard_old;
+    DROP TABLE blackboard_old;
   `);
 }
 

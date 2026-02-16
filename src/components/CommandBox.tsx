@@ -3,21 +3,24 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Team } from "@/lib/types";
+import type { ConversationStarter } from "@/lib/chip-generator";
 
 type Platform = "claude-code" | "opencode";
 
 interface CommandBoxProps {
   teams: Team[];
+  starters?: ConversationStarter[];
+  onOrchestratorSubmit?: (prompt: string, platform: Platform) => void;
 }
 
-const QUICK_ACTIONS = [
-  { label: "Scan my plugins", href: "/discover" },
-  { label: "Launch an agent", href: "/agents" },
-  { label: "Browse marketplace", href: "/plugins" },
-  { label: "Create a workflow", href: "/workflows" },
+const DEFAULT_STARTERS: ConversationStarter[] = [
+  { label: "Scan my plugins", prompt: "Scan my plugins and find patterns" },
+  { label: "Launch an agent", prompt: "Help me launch an agent" },
+  { label: "Browse marketplace", prompt: "What plugins are available?" },
+  { label: "Create a workflow", prompt: "Help me create a workflow" },
 ];
 
-export function CommandBox({ teams }: CommandBoxProps) {
+export function CommandBox({ teams, starters, onOrchestratorSubmit }: CommandBoxProps) {
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
@@ -50,13 +53,20 @@ export function CommandBox({ teams }: CommandBoxProps) {
     }
   }, [showTeamMenu]);
 
-  function handleSubmit() {
-    const text = value.trim();
+  function handleSubmit(overridePrompt?: string, overridePlatform?: Platform) {
+    const text = (overridePrompt ?? value).trim();
     if (!text) return;
 
+    const activePlatform = overridePlatform ?? platform;
+
     if (target === "chat") {
-      const params = new URLSearchParams({ prompt: text, platform });
-      router.push(`/agent?${params.toString()}`);
+      if (onOrchestratorSubmit) {
+        onOrchestratorSubmit(text, activePlatform);
+        setValue("");
+      } else {
+        const params = new URLSearchParams({ prompt: text, platform: activePlatform });
+        router.push(`/agent?${params.toString()}`);
+      }
     } else {
       // Start a team
       fetch(`/api/teams/${target}/start`, {
@@ -69,6 +79,14 @@ export function CommandBox({ teams }: CommandBoxProps) {
     }
   }
 
+  function handleStarterClick(starter: ConversationStarter) {
+    if (starter.platform) {
+      setPlatform(starter.platform);
+    }
+    setValue(starter.prompt);
+    handleSubmit(starter.prompt, starter.platform);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -78,6 +96,7 @@ export function CommandBox({ teams }: CommandBoxProps) {
 
   const selectedTeam = teams.find((t) => t.id === target);
   const targetLabel = target === "chat" ? "Chat" : selectedTeam?.name || "Team";
+  const chips = starters && starters.length > 0 ? starters : DEFAULT_STARTERS;
 
   return (
     <div className="space-y-4">
@@ -174,7 +193,7 @@ export function CommandBox({ teams }: CommandBoxProps) {
 
             {/* Send button */}
             <button
-              onClick={handleSubmit}
+              onClick={() => handleSubmit()}
               disabled={!value.trim()}
               className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background transition-all hover:bg-foreground/90 disabled:opacity-20 disabled:hover:bg-foreground"
             >
@@ -186,16 +205,16 @@ export function CommandBox({ teams }: CommandBoxProps) {
         </div>
       </div>
 
-      {/* Quick action chips */}
+      {/* Conversation starter chips */}
       <div className="flex flex-wrap justify-center gap-2">
-        {QUICK_ACTIONS.map((action, i) => (
+        {chips.map((starter, i) => (
           <button
-            key={action.label}
-            onClick={() => router.push(action.href)}
+            key={starter.label}
+            onClick={() => handleStarterClick(starter)}
             className="landing-chip flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3.5 py-2 text-sm text-muted-foreground transition-all hover:border-zinc-600 hover:bg-secondary/80 hover:text-accent-foreground"
             style={{ animationDelay: `${0.1 + i * 0.05}s` }}
           >
-            {action.label}
+            {starter.label}
           </button>
         ))}
       </div>

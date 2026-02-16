@@ -1,33 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import type { AgentInstanceSummary } from "@/lib/types";
+import { useAgents } from "@/hooks/use-queries";
 
 export function RuntimeBadge() {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function poll() {
-      try {
-        const res = await fetch("/api/agents");
-        if (!res.ok) return;
-        const agents: AgentInstanceSummary[] = await res.json();
-        if (!cancelled) {
-          setCount(agents.filter((a) => a.status === "running").length);
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    poll();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: agents = [] } = useAgents();
+  const count = agents.filter((a) => a.status === "running").length;
 
   return (
     <Link

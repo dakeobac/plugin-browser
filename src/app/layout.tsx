@@ -5,6 +5,9 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BuildProvider } from "@/components/BuildProvider";
 import { BuildStatusWidget } from "@/components/BuildStatusWidget";
+import { QueryProvider } from "@/components/QueryProvider";
+import { NotificationProvider } from "@/components/NotificationProvider";
+import { NotificationToast } from "@/components/NotificationToast";
 import { NavDropdown } from "@/components/NavDropdown";
 import { NavLink } from "@/components/NavLink";
 import { RuntimeBadge } from "@/components/RuntimeBadge";
@@ -36,6 +39,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
+        <QueryProvider>
           <BuildProvider>
             <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm">
               <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
@@ -82,9 +86,13 @@ export default function RootLayout({
                 </nav>
               </div>
             </header>
-            <main className="mx-auto max-w-6xl px-6 py-6">{children}</main>
+            <NotificationProvider>
+              <main className="mx-auto max-w-6xl px-6 py-6">{children}</main>
+              <NotificationToast />
+            </NotificationProvider>
             <BuildStatusWidget />
           </BuildProvider>
+        </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

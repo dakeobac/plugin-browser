@@ -643,6 +643,7 @@ export interface BlackboardEntry {
   updatedBy: string;
   updatedAt: string;
   version: number;
+  teamId?: string;
 }
 
 // --- Ecosystem / Registry types ---

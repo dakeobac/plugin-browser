@@ -208,8 +208,8 @@ async function executeStep(
  * Execute a workflow.
  * Creates a run, resolves DAG, executes layers in parallel.
  */
-export async function executeWorkflow(workflow: Workflow): Promise<WorkflowRun> {
-  const run = createWorkflowRun(workflow.id);
+export async function executeWorkflow(workflow: Workflow, initialInput?: Record<string, unknown>): Promise<WorkflowRun> {
+  const run = createWorkflowRun(workflow.id, initialInput);
 
   insertLog({
     level: "info",

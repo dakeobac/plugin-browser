@@ -15,6 +15,7 @@ export function ChatPanel({
   onSessionCreated,
   platform = "claude-code",
   apiEndpoint,
+  mcpServers,
 }: {
   initialPrompt?: string;
   cwd?: string;
@@ -24,6 +25,7 @@ export function ChatPanel({
   onSessionCreated?: (sessionId: string) => void;
   platform?: Platform;
   apiEndpoint?: { start: string; resume: string };
+  mcpServers?: Record<string, { command: string; args: string[]; env?: Record<string, string> }>;
 }) {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState("");
@@ -279,6 +281,7 @@ export function ChatPanel({
               cwd,
               systemPrompt,
               directory: cwd,
+              mcpServers,
             }),
             signal: controller.signal,
           });
@@ -293,12 +296,24 @@ export function ChatPanel({
         }
       }
     },
-    [cwd, systemPrompt, processStream, platform, apiEndpoint]
+    [cwd, systemPrompt, processStream, platform, apiEndpoint, mcpServers]
   );
 
   // Stable ref for sendMessage to avoid re-triggering the initial prompt effect
   const sendMessageRef = useRef(sendMessage);
   useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
+
+  // Load message history when resuming a session (no initial prompt)
+  useEffect(() => {
+    if (initialSessionId && !initialPrompt) {
+      fetch(`/api/agent/sessions/${initialSessionId}/history`)
+        .then((r) => r.json())
+        .then((history: ChatMessageType[]) => {
+          if (history.length) setMessages(history);
+        })
+        .catch(() => {});
+    }
+  }, [initialSessionId, initialPrompt]);
 
   // Auto-send initial prompt once
   useEffect(() => {

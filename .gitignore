@@ -49,3 +49,9 @@ next-env.d.ts
 # Prompt engineering / design files (development only)
 PROMPT-*.md
 DESIGN-SYSTEM-BRIEF.md
+
+# Development artifacts
+PLAN.md
+*.zip
+engram-test-*.md
+.playwright-mcp/

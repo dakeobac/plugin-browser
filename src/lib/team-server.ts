@@ -91,22 +91,24 @@ const TOOLS = [
   },
   {
     name: "read_blackboard",
-    description: "Read a value from the shared blackboard",
+    description: "Read a value from the team's shared blackboard",
     inputSchema: {
       type: "object",
       properties: {
         key: { type: "string", description: "Blackboard key to read (omit for all)" },
+        teamId: { type: "string", description: "Team ID to scope the blackboard (defaults to _global)" },
       },
     },
   },
   {
     name: "update_blackboard",
-    description: "Write a value to the shared blackboard",
+    description: "Write a value to the team's shared blackboard",
     inputSchema: {
       type: "object",
       properties: {
         key: { type: "string", description: "Blackboard key" },
         value: { description: "Value to store" },
+        teamId: { type: "string", description: "Team ID to scope the blackboard (defaults to _global)" },
       },
       required: ["key", "value"],
     },
@@ -228,10 +230,11 @@ function handleToolCall(agentId: string, toolName: string, args: Record<string, 
 
     case "read_blackboard": {
       const key = args.key as string | undefined;
+      const teamId = (args.teamId as string) || "_global";
       if (key) {
-        return readBlackboard(key) || { key, value: null };
+        return readBlackboard(key, teamId) || { key, value: null };
       }
-      return readAllBlackboard();
+      return readAllBlackboard(teamId);
     }
 
     case "update_blackboard":
@@ -239,6 +242,7 @@ function handleToolCall(agentId: string, toolName: string, args: Record<string, 
         key: args.key as string,
         value: args.value,
         updatedBy: agentId,
+        teamId: (args.teamId as string) || "_global",
       });
 
     case "claim_task": {
