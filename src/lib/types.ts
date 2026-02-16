@@ -465,6 +465,30 @@ export interface CreateMcpServerRequest {
   cwd?: string;
 }
 
+// --- E2B Sandbox types ---
+
+export interface E2BSandboxConfig {
+  template: string;
+  timeout: number;
+  resources: { cpu: number; memoryMB: number };
+  persistent: boolean;
+  envVars?: Record<string, string>;
+}
+
+export interface SandboxInstance {
+  id: string;
+  sandboxId: string;
+  agentId?: string;
+  config: E2BSandboxConfig;
+  status: "creating" | "running" | "paused" | "stopped" | "error";
+  createdAt: string;
+  lastActiveAt: string;
+  url?: string;
+  error?: string;
+}
+
+export type RuntimeType = "claude-code" | "opencode" | "e2b";
+
 // --- Background Build types ---
 
 export type BuildStatus = "building" | "done" | "error";
