@@ -8,6 +8,7 @@ import type { PluginDetail as PluginDetailType } from "@/lib/types";
 import { AntiFeatureBadgesFull } from "./AntiFeatureBadges";
 import { UpdateBadge } from "./UpdateBadge";
 import { UserRating } from "./UserRating";
+import { PublishDialog } from "./PublishDialog";
 
 function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
@@ -25,6 +26,7 @@ function AuthorName({ author }: { author: PluginDetailType["author"] }) {
 
 export function PluginDetailView({ plugin }: { plugin: PluginDetailType }) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [showPublish, setShowPublish] = useState(false);
   const router = useRouter();
 
   const cliName = plugin.installInfo?.cliName ?? null;
@@ -232,7 +234,7 @@ export function PluginDetailView({ plugin }: { plugin: PluginDetailType }) {
         )}
       </div>
 
-      {/* Open in Agent / Finder / VS Code */}
+      {/* Open in Agent / Launch Agent / Finder / VS Code */}
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href={`/agent?plugin=${encodeURIComponent(plugin.name)}&cwd=${encodeURIComponent(plugin.pluginPath)}`}
@@ -241,8 +243,19 @@ export function PluginDetailView({ plugin }: { plugin: PluginDetailType }) {
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          Open in Agent
+          Open in Chat
         </Link>
+        {plugin.hasAgents && (
+          <Link
+            href={`/agents?launch=${encodeURIComponent(plugin.slug)}`}
+            className="inline-flex items-center gap-2 rounded-lg bg-green-500/20 border border-green-500/30 px-4 py-2 text-sm font-medium text-green-400 transition-colors hover:bg-green-500/30"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+            </svg>
+            Launch Agent
+          </Link>
+        )}
         <button
           disabled={loading !== null}
           onClick={() => openFolder("finder")}
@@ -263,7 +276,20 @@ export function PluginDetailView({ plugin }: { plugin: PluginDetailType }) {
           </svg>
           {loading === "vscode" ? "Opening..." : "Open in VS Code"}
         </button>
+        <button
+          onClick={() => setShowPublish(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-purple-500/20 border border-purple-500/30 px-4 py-2 text-sm font-medium text-purple-400 transition-colors hover:bg-purple-500/30"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+          </svg>
+          Publish to Ecosystem
+        </button>
       </div>
+
+      {showPublish && (
+        <PublishDialog plugin={plugin} onClose={() => setShowPublish(false)} />
+      )}
 
       {/* Commands & Skills lists */}
       <div className="grid gap-6 md:grid-cols-2">

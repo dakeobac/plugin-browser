@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { startAgent } from "@/lib/claude-process";
+import { createTrace, instrumentSend } from "@/lib/trace-store";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { prompt, cwd, systemPrompt, maxTurns, permissionMode } = body;
+  const { prompt, cwd, systemPrompt, maxTurns, permissionMode, mcpServers } = body;
 
   if (!prompt || typeof prompt !== "string") {
     return new Response(JSON.stringify({ error: "prompt is required" }), {
@@ -14,14 +15,21 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const agent = startAgent({ prompt, cwd, systemPrompt, maxTurns, permissionMode });
+  const trace = createTrace({
+    agentId: "chat",
+    agentName: "Chat",
+    runtime: "claude-code",
+    promptPreview: prompt.slice(0, 200),
+  });
+
+  const agent = startAgent({ prompt, cwd, systemPrompt, maxTurns, permissionMode, mcpServers });
 
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
       let closed = false;
 
-      function send(data: unknown) {
+      function rawSend(data: unknown) {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -30,16 +38,16 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      send({ type: "status", message: "Starting Claude..." });
+      const send = instrumentSend(trace.traceId, rawSend);
+
+      rawSend({ type: "status", message: "Starting Claude..." });
 
       (async () => {
         try {
           for await (const message of agent.messages) {
-            console.log(`[Agent SSE] type=${(message as Record<string, unknown>).type}`);
             send(message);
           }
         } catch (err) {
-          console.error("[Agent SSE] Error:", err);
           send({ type: "error", message: (err as Error).message });
         } finally {
           send({ type: "done" });

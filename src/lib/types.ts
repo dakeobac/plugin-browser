@@ -388,6 +388,309 @@ export interface ParsedBriefSpec {
   confidence: "high" | "medium" | "low";
 }
 
+// --- Agent Registry types ---
+
+export type AgentRuntime = "claude-code" | "opencode";
+export type AgentStatus = "idle" | "running" | "paused" | "error" | "terminated";
+
+export interface McpServerRef {
+  id: string;
+  name: string;
+}
+
+export interface AgentConfig {
+  runtime: AgentRuntime;
+  cwd?: string;
+  systemPrompt?: string;
+  maxTurns?: number;
+  permissionMode?: string;
+  mcpServers?: McpServerRef[];
+  env?: Record<string, string>;
+}
+
+export interface AgentInstance {
+  id: string;
+  pluginSlug?: string;
+  agentName: string;
+  displayName: string;
+  status: AgentStatus;
+  runtime: AgentRuntime;
+  sessionId?: string;
+  startedAt?: string;
+  lastActivity?: string;
+  config: AgentConfig;
+  error?: string;
+}
+
+export interface AgentInstanceSummary {
+  id: string;
+  agentName: string;
+  displayName: string;
+  status: AgentStatus;
+  runtime: AgentRuntime;
+  pluginSlug?: string;
+  startedAt?: string;
+  lastActivity?: string;
+}
+
+export interface AgentLogEntry {
+  timestamp: string;
+  level: "info" | "warn" | "error" | "debug";
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+// --- MCP Connector types ---
+
+export interface McpServerConfig {
+  id: string;
+  name: string;
+  displayName: string;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  cwd?: string;
+  status: "connected" | "disconnected" | "error" | "unknown";
+  source: "manual" | "plugin" | "settings";
+  lastChecked?: string;
+  error?: string;
+}
+
+export interface CreateMcpServerRequest {
+  name: string;
+  displayName: string;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  cwd?: string;
+}
+
+// --- E2B Sandbox types ---
+
+export interface E2BSandboxConfig {
+  template: string;
+  timeout: number;
+  resources: { cpu: number; memoryMB: number };
+  persistent: boolean;
+  envVars?: Record<string, string>;
+}
+
+export interface SandboxInstance {
+  id: string;
+  sandboxId: string;
+  agentId?: string;
+  config: E2BSandboxConfig;
+  status: "creating" | "running" | "paused" | "stopped" | "error";
+  createdAt: string;
+  lastActiveAt: string;
+  url?: string;
+  error?: string;
+}
+
+export type RuntimeType = "claude-code" | "opencode" | "e2b";
+
+// --- Observability types ---
+
+export interface AgentTrace {
+  traceId: string;
+  agentId: string;
+  agentName?: string;
+  runtime: AgentRuntime;
+  promptPreview?: string;
+  startedAt: string;
+  completedAt?: string;
+  status: "running" | "completed" | "error";
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalCost?: number;
+  error?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TraceSpan {
+  spanId: string;
+  traceId: string;
+  parentSpanId?: string;
+  name: string;
+  spanType?: string;
+  startedAt: string;
+  durationMs: number;
+  status: "running" | "completed" | "error";
+  error?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface LogEntry {
+  id: number;
+  timestamp: string;
+  level: "info" | "warn" | "error" | "debug";
+  source: string;
+  sourceId?: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CostSummary {
+  date: string;
+  agentId: string;
+  runtime: AgentRuntime;
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalCost: number;
+  traceCount: number;
+}
+
+export interface ObservatoryStats {
+  totalTraces: number;
+  activeAgents: number;
+  totalCost: number;
+  totalTokens: number;
+  errorRate: number;
+  recentActivity: LogEntry[];
+  costByDay: CostSummary[];
+  tracesByAgent: { agentId: string; agentName: string; count: number }[];
+}
+
+// --- Workflow types ---
+
+export type WorkflowTrigger =
+  | { type: "manual" }
+  | { type: "cron"; schedule: string }
+  | { type: "event"; eventPattern: string }
+  | { type: "webhook"; path: string };
+
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  agentId: string;
+  prompt: string;
+  dependsOn?: string[];
+  outputKey?: string;
+  condition?: string;
+  retries?: number;
+  timeout?: number;
+  runtime?: AgentRuntime;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  trigger: WorkflowTrigger;
+  steps: WorkflowStep[];
+  status: "active" | "inactive" | "running";
+  createdAt: string;
+  updatedAt: string;
+  lastRunAt?: string;
+  lastRunStatus?: "completed" | "error" | "running";
+}
+
+export interface WorkflowStepResult {
+  stepId: string;
+  status: "pending" | "running" | "completed" | "error" | "skipped";
+  startedAt?: string;
+  completedAt?: string;
+  output?: string;
+  error?: string;
+  traceId?: string;
+}
+
+export interface WorkflowRun {
+  id: string;
+  workflowId: string;
+  status: "running" | "completed" | "error";
+  startedAt: string;
+  completedAt?: string;
+  stepResults: Record<string, WorkflowStepResult>;
+  blackboard: Record<string, unknown>;
+  error?: string;
+}
+
+// --- Team types ---
+
+export interface TeamMember {
+  agentId: string;
+  role: string;
+  capabilities: string[];
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description: string;
+  supervisorId?: string;
+  members: TeamMember[];
+  status: "idle" | "active" | "error";
+  createdAt: string;
+}
+
+// --- Event bus + Blackboard types ---
+
+export interface BusEvent {
+  id: string;
+  type: string;
+  source: string;
+  timestamp: string;
+  payload: Record<string, unknown>;
+  consumed: boolean;
+}
+
+export interface BlackboardEntry {
+  key: string;
+  value: unknown;
+  updatedBy: string;
+  updatedAt: string;
+  version: number;
+  teamId?: string;
+}
+
+// --- Ecosystem / Registry types ---
+
+export interface RegistryEntry {
+  name: string;
+  displayName: string;
+  description: string;
+  version: string;
+  author: string;
+  repository: string;
+  category?: string;
+  tags: string[];
+  platform: "claude-code" | "opencode" | "both";
+  downloads?: number;
+  rating?: number;
+  publishedAt: string;
+  updatedAt: string;
+  readme?: string;
+  checksumSha256?: string;
+}
+
+export interface RegistryIndex {
+  version: string;
+  updatedAt: string;
+  plugins: RegistryEntry[];
+  agents: RegistryEntry[];
+  workflows: RegistryEntry[];
+}
+
+export interface PublishRequest {
+  pluginSlug: string;
+  displayName: string;
+  description: string;
+  tags: string[];
+  category: string;
+  platform: "claude-code" | "opencode" | "both";
+  repositoryUrl?: string;
+}
+
+export interface PublishResult {
+  success: boolean;
+  prUrl?: string;
+  repoUrl?: string;
+  error?: string;
+}
+
 // --- Background Build types ---
 
 export type BuildStatus = "building" | "done" | "error";

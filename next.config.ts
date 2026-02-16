@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["e2b", "better-sqlite3", "@modelcontextprotocol/sdk"],
 };
 
 export default nextConfig;

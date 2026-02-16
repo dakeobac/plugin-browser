@@ -14,6 +14,8 @@ export function ChatPanel({
   compact,
   onSessionCreated,
   platform = "claude-code",
+  apiEndpoint,
+  mcpServers,
 }: {
   initialPrompt?: string;
   cwd?: string;
@@ -22,6 +24,8 @@ export function ChatPanel({
   compact?: boolean;
   onSessionCreated?: (sessionId: string) => void;
   platform?: Platform;
+  apiEndpoint?: { start: string; resume: string };
+  mcpServers?: Record<string, { command: string; args: string[]; env?: Record<string, string> }>;
 }) {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState("");
@@ -254,20 +258,22 @@ export function ChatPanel({
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Route to the correct API based on platform
-      const apiBase = platform === "opencode" ? "/api/agent/opencode" : "/api/agent";
+      // Use custom endpoint if provided, otherwise route by platform
+      const defaultBase = platform === "opencode" ? "/api/agent/opencode" : "/api/agent";
+      const startUrl = apiEndpoint?.start ?? `${defaultBase}/start`;
+      const resumeUrl = apiEndpoint?.resume ?? `${defaultBase}/resume`;
 
       try {
         let response: Response;
         if (sessionIdRef.current) {
-          response = await fetch(`${apiBase}/resume`, {
+          response = await fetch(resumeUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sessionId: sessionIdRef.current, message: text.trim() }),
             signal: controller.signal,
           });
         } else {
-          response = await fetch(`${apiBase}/start`, {
+          response = await fetch(startUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -275,6 +281,7 @@ export function ChatPanel({
               cwd,
               systemPrompt,
               directory: cwd,
+              mcpServers,
             }),
             signal: controller.signal,
           });
@@ -289,12 +296,24 @@ export function ChatPanel({
         }
       }
     },
-    [cwd, systemPrompt, processStream, platform]
+    [cwd, systemPrompt, processStream, platform, apiEndpoint, mcpServers]
   );
 
   // Stable ref for sendMessage to avoid re-triggering the initial prompt effect
   const sendMessageRef = useRef(sendMessage);
   useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
+
+  // Load message history when resuming a session (no initial prompt)
+  useEffect(() => {
+    if (initialSessionId && !initialPrompt) {
+      fetch(`/api/agent/sessions/${initialSessionId}/history`)
+        .then((r) => r.json())
+        .then((history: ChatMessageType[]) => {
+          if (history.length) setMessages(history);
+        })
+        .catch(() => {});
+    }
+  }, [initialSessionId, initialPrompt]);
 
   // Auto-send initial prompt once
   useEffect(() => {

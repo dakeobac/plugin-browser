@@ -95,9 +95,12 @@ export function SessionSidebar({
           <ul className="space-y-0.5 p-2">
             {filteredSessions.map((session) => (
               <li key={session.id}>
-                <button
+                <div
                   onClick={() => onSelectSession(session)}
-                  className={`group flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left transition-colors ${
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelectSession(session); } }}
+                  role="button"
+                  tabIndex={0}
+                  className={`group flex w-full cursor-pointer items-start gap-2 rounded-lg px-3 py-2 text-left transition-colors ${
                     currentSessionId === session.id
                       ? "bg-primary/20 text-primary"
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -122,7 +125,7 @@ export function SessionSidebar({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                </button>
+                </div>
               </li>
             ))}
           </ul>

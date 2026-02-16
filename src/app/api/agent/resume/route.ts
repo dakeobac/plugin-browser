@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { startAgent } from "@/lib/claude-process";
+import { createTrace, instrumentSend } from "@/lib/trace-store";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const trace = createTrace({
+    agentId: "chat",
+    agentName: "Chat (resume)",
+    runtime: "claude-code",
+    promptPreview: message.slice(0, 200),
+  });
+
   const agent = startAgent({
     prompt: message,
     resumeSessionId: sessionId,
@@ -31,7 +39,7 @@ export async function POST(req: NextRequest) {
       const encoder = new TextEncoder();
       let closed = false;
 
-      function send(data: unknown) {
+      function rawSend(data: unknown) {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -40,16 +48,16 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      send({ type: "status", message: "Resuming session..." });
+      const send = instrumentSend(trace.traceId, rawSend);
+
+      rawSend({ type: "status", message: "Resuming session..." });
 
       (async () => {
         try {
           for await (const message of agent.messages) {
-            console.log(`[Agent SSE] type=${(message as Record<string, unknown>).type}`);
             send(message);
           }
         } catch (err) {
-          console.error("[Agent SSE] Error:", err);
           send({ type: "error", message: (err as Error).message });
         } finally {
           send({ type: "done" });
