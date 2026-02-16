@@ -440,6 +440,31 @@ export interface AgentLogEntry {
   data?: Record<string, unknown>;
 }
 
+// --- MCP Connector types ---
+
+export interface McpServerConfig {
+  id: string;
+  name: string;
+  displayName: string;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  cwd?: string;
+  status: "connected" | "disconnected" | "error" | "unknown";
+  source: "manual" | "plugin" | "settings";
+  lastChecked?: string;
+  error?: string;
+}
+
+export interface CreateMcpServerRequest {
+  name: string;
+  displayName: string;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  cwd?: string;
+}
+
 // --- Background Build types ---
 
 export type BuildStatus = "building" | "done" | "error";

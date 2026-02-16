@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     systemPrompt,
     maxTurns,
     permissionMode,
+    mcpServerIds,
   } = body as {
     agentName: string;
     displayName: string;
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
     systemPrompt?: string;
     maxTurns?: number;
     permissionMode?: string;
+    mcpServerIds?: string[];
   };
 
   if (!agentName || !displayName || !prompt) {
@@ -41,12 +43,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Convert MCP server IDs to refs
+  const mcpServers = mcpServerIds?.map((id) => ({ id, name: id }));
+
   const config: AgentConfig = {
     runtime: runtime === "opencode" ? "opencode" : "claude-code",
     cwd,
     systemPrompt,
     maxTurns,
     permissionMode,
+    mcpServers,
   };
 
   const agent = createAgent({ agentName, displayName, config, pluginSlug });

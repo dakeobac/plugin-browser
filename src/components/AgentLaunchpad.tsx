@@ -72,6 +72,7 @@ export function AgentLaunchpad({ plugins }: { plugins: PluginSummary[] }) {
     systemPrompt: string;
     initialPrompt: string;
     maxTurns: number;
+    mcpServerIds?: string[];
   }) {
     setShowConfig(false);
     // Fire-and-forget — the agent will appear in the poll
@@ -87,6 +88,7 @@ export function AgentLaunchpad({ plugins }: { plugins: PluginSummary[] }) {
         cwd: config.cwd || undefined,
         systemPrompt: config.systemPrompt || undefined,
         maxTurns: config.maxTurns || undefined,
+        mcpServerIds: config.mcpServerIds?.length ? config.mcpServerIds : undefined,
       }),
     }).then(() => {
       // Refresh quickly after launch
