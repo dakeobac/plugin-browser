@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CommandBox } from "./CommandBox";
 import { StatStrip } from "./StatStrip";
 import { ActiveAgentsPanel } from "./ActiveAgentsPanel";
@@ -75,6 +75,16 @@ export function EngramDashboard({
   const [initialPrompt, setInitialPrompt] = useState<string | undefined>(undefined);
   const [chatKey, setChatKey] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [recentSessions, setRecentSessions] = useState<SessionMeta[]>([]);
+
+  useEffect(() => {
+    if (view === "dashboard") {
+      fetch("/api/agent/sessions")
+        .then((r) => r.json())
+        .then((data: SessionMeta[]) => setRecentSessions(data.slice(0, 5)))
+        .catch(() => {});
+    }
+  }, [view]);
 
   const handleOrchestratorSubmit = useCallback((prompt: string, platform: Platform) => {
     setOrchestratorPlatform(platform);
@@ -190,6 +200,39 @@ export function EngramDashboard({
       <section className="dashboard-fade-up pt-4 sm:pt-8">
         <CommandBox teams={teams} starters={starters} onOrchestratorSubmit={handleOrchestratorSubmit} />
       </section>
+
+      {/* Recent Chats */}
+      {recentSessions.length > 0 && (
+        <section className="dashboard-fade-up" style={{ animationDelay: "0.03s" }}>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground">Recent chats</span>
+            <div className="flex flex-wrap gap-2">
+              {recentSessions.map((session) => {
+                const age = Date.now() - new Date(session.lastUsedAt).getTime();
+                const timeLabel =
+                  age < 60000 ? "just now"
+                  : age < 3600000 ? `${Math.floor(age / 60000)}m ago`
+                  : age < 86400000 ? `${Math.floor(age / 3600000)}h ago`
+                  : new Date(session.lastUsedAt).toLocaleDateString();
+                const platformColor = session.platform === "opencode" ? "text-emerald-400" : "text-orange-400";
+                return (
+                  <button
+                    key={session.id}
+                    onClick={() => handleSelectSession(session)}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs transition-colors hover:border-zinc-600 hover:bg-zinc-800/80"
+                  >
+                    <span className={`font-medium ${platformColor}`}>
+                      {session.platform === "opencode" ? "OC" : "CC"}
+                    </span>
+                    <span className="text-foreground truncate max-w-[140px]">{session.title}</span>
+                    <span className="text-muted-foreground">{timeLabel}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Stats Strip */}
       <section className="dashboard-fade-up" style={{ animationDelay: "0.05s" }}>
