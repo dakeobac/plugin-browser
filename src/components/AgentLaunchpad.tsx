@@ -1,41 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import type { AgentInstanceSummary, PluginSummary } from "@/lib/types";
+import type { PluginSummary } from "@/lib/types";
+import { useAgents, useInvalidateAgents } from "@/hooks/use-queries";
 import { AgentInstanceCard } from "./AgentInstanceCard";
 import { AgentConfigDialog } from "./AgentConfigDialog";
-
-const POLL_INTERVAL = 5000;
 
 export function AgentLaunchpad({ plugins }: { plugins: PluginSummary[] }) {
   const searchParams = useSearchParams();
   const launchSlug = searchParams.get("launch");
 
-  const [agents, setAgents] = useState<AgentInstanceSummary[]>([]);
+  const { data: agents = [] } = useAgents();
+  const invalidateAgents = useInvalidateAgents();
   const [showConfig, setShowConfig] = useState(false);
   const [prefillName, setPrefillName] = useState("");
   const [prefillCwd, setPrefillCwd] = useState("");
   const [prefillSlug, setPrefillSlug] = useState("");
-
-  const fetchAgents = useCallback(async () => {
-    try {
-      const res = await fetch("/api/agents");
-      if (res.ok) {
-        const data = await res.json();
-        setAgents(data);
-      }
-    } catch {
-      // Network error — keep existing state
-    }
-  }, []);
-
-  // Poll for agent list
-  useEffect(() => {
-    fetchAgents();
-    const interval = setInterval(fetchAgents, POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [fetchAgents]);
 
   // Handle ?launch=slug query param
   useEffect(() => {
@@ -56,12 +37,12 @@ export function AgentLaunchpad({ plugins }: { plugins: PluginSummary[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "stop" }),
     });
-    fetchAgents();
+    invalidateAgents();
   }
 
   async function handleDelete(id: string) {
     await fetch(`/api/agents/${id}`, { method: "DELETE" });
-    fetchAgents();
+    invalidateAgents();
   }
 
   async function handleLaunch(config: {
@@ -92,7 +73,7 @@ export function AgentLaunchpad({ plugins }: { plugins: PluginSummary[] }) {
       }),
     }).then(() => {
       // Refresh quickly after launch
-      setTimeout(fetchAgents, 500);
+      setTimeout(invalidateAgents, 500);
     });
   }
 

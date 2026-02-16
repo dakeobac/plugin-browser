@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import type { ObservatoryStats } from "@/lib/types";
+import { useObservatoryStats } from "@/hooks/use-queries";
 import { ActivityFeed } from "./ActivityFeed";
 import { AgentHealthPanel } from "./AgentHealthPanel";
 import { CostBreakdown } from "./CostBreakdown";
@@ -17,18 +17,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 }
 
 export function ObservatoryDashboard({ initialStats }: { initialStats: ObservatoryStats }) {
-  const [stats, setStats] = useState(initialStats);
-
-  // Refresh every 10s
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch("/api/observatory");
-        if (res.ok) setStats(await res.json());
-      } catch { /* keep existing */ }
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const { data: stats = initialStats } = useObservatoryStats(initialStats);
 
   return (
     <div className="space-y-6">

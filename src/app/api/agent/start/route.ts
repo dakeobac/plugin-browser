@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { prompt, cwd, systemPrompt, maxTurns, permissionMode } = body;
+  const { prompt, cwd, systemPrompt, maxTurns, permissionMode, mcpServers } = body;
 
   if (!prompt || typeof prompt !== "string") {
     return new Response(JSON.stringify({ error: "prompt is required" }), {
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     promptPreview: prompt.slice(0, 200),
   });
 
-  const agent = startAgent({ prompt, cwd, systemPrompt, maxTurns, permissionMode });
+  const agent = startAgent({ prompt, cwd, systemPrompt, maxTurns, permissionMode, mcpServers });
 
   const stream = new ReadableStream({
     start(controller) {
@@ -45,11 +45,9 @@ export async function POST(req: NextRequest) {
       (async () => {
         try {
           for await (const message of agent.messages) {
-            console.log(`[Agent SSE] type=${(message as Record<string, unknown>).type}`);
             send(message);
           }
         } catch (err) {
-          console.error("[Agent SSE] Error:", err);
           send({ type: "error", message: (err as Error).message });
         } finally {
           send({ type: "done" });

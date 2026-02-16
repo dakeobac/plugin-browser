@@ -5,6 +5,12 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BuildProvider } from "@/components/BuildProvider";
 import { BuildStatusWidget } from "@/components/BuildStatusWidget";
+import { QueryProvider } from "@/components/QueryProvider";
+import { NotificationProvider } from "@/components/NotificationProvider";
+import { NotificationToast } from "@/components/NotificationToast";
+import { NavDropdown } from "@/components/NavDropdown";
+import { NavLink } from "@/components/NavLink";
+import { RuntimeBadge } from "@/components/RuntimeBadge";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,8 +24,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Plugin Factory",
-  description: "Browse, analyze, and create Claude Code plugins",
+  title: "Engram",
+  description: "Agent workbench for Claude Code",
 };
 
 export default function RootLayout({
@@ -33,97 +39,60 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
+        <QueryProvider>
           <BuildProvider>
             <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm">
               <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
                 <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
-                    <svg
-                      className="h-4 w-4 text-blue-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                      />
-                    </svg>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+                    <span className="text-lg font-bold bg-gradient-to-br from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                      &#x25C8;
+                    </span>
                   </div>
                   <h1 className="text-lg font-semibold text-foreground">
-                    Plugin Factory
+                    Engram
                   </h1>
+                  <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    v0.1
+                  </span>
                 </Link>
                 <nav className="ml-auto flex items-center gap-4">
-                  <Link
-                    href="/plugins"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Plugins
-                  </Link>
-                  <Link
-                    href="/discover"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Discover
-                  </Link>
-                  <Link
-                    href="/agents"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Agents
-                  </Link>
-                  <Link
-                    href="/agent"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Chat
-                  </Link>
-                  <Link
-                    href="/workflows"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Workflows
-                  </Link>
-                  <Link
-                    href="/teams"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Teams
-                  </Link>
-                  <Link
-                    href="/connectors"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Connectors
-                  </Link>
-                  <Link
-                    href="/observatory"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
+                  <NavLink href="/">
+                    Dashboard
+                  </NavLink>
+                  <NavDropdown
+                    label="Workbench"
+                    items={[
+                      { href: "/agents", label: "Agents" },
+                      { href: "/agent", label: "Chat" },
+                      { href: "/teams", label: "Teams" },
+                      { href: "/workflows", label: "Workflows" },
+                    ]}
+                  />
+                  <NavDropdown
+                    label="Marketplace"
+                    items={[
+                      { href: "/plugins", label: "Browse" },
+                      { href: "/discover", label: "Discover" },
+                      { href: "/ecosystem", label: "Ecosystem" },
+                      { href: "/connectors", label: "Connectors" },
+                    ]}
+                  />
+                  <NavLink href="/observatory">
                     Observatory
-                  </Link>
-                  <Link
-                    href="/wiki"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Wiki
-                  </Link>
-                  <Link
-                    href="/github"
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    GitHub
-                  </Link>
+                  </NavLink>
+                  <RuntimeBadge />
                   <ThemeToggle />
                 </nav>
               </div>
             </header>
-            <main className="mx-auto max-w-6xl px-6 py-6">{children}</main>
+            <NotificationProvider>
+              <main className="mx-auto max-w-6xl px-6 py-6">{children}</main>
+              <NotificationToast />
+            </NotificationProvider>
             <BuildStatusWidget />
           </BuildProvider>
+        </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

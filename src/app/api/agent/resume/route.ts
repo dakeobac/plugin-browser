@@ -55,11 +55,9 @@ export async function POST(req: NextRequest) {
       (async () => {
         try {
           for await (const message of agent.messages) {
-            console.log(`[Agent SSE] type=${(message as Record<string, unknown>).type}`);
             send(message);
           }
         } catch (err) {
-          console.error("[Agent SSE] Error:", err);
           send({ type: "error", message: (err as Error).message });
         } finally {
           send({ type: "done" });

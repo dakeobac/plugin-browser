@@ -643,6 +643,52 @@ export interface BlackboardEntry {
   updatedBy: string;
   updatedAt: string;
   version: number;
+  teamId?: string;
+}
+
+// --- Ecosystem / Registry types ---
+
+export interface RegistryEntry {
+  name: string;
+  displayName: string;
+  description: string;
+  version: string;
+  author: string;
+  repository: string;
+  category?: string;
+  tags: string[];
+  platform: "claude-code" | "opencode" | "both";
+  downloads?: number;
+  rating?: number;
+  publishedAt: string;
+  updatedAt: string;
+  readme?: string;
+  checksumSha256?: string;
+}
+
+export interface RegistryIndex {
+  version: string;
+  updatedAt: string;
+  plugins: RegistryEntry[];
+  agents: RegistryEntry[];
+  workflows: RegistryEntry[];
+}
+
+export interface PublishRequest {
+  pluginSlug: string;
+  displayName: string;
+  description: string;
+  tags: string[];
+  category: string;
+  platform: "claude-code" | "opencode" | "both";
+  repositoryUrl?: string;
+}
+
+export interface PublishResult {
+  success: boolean;
+  prUrl?: string;
+  repoUrl?: string;
+  error?: string;
 }
 
 // --- Background Build types ---

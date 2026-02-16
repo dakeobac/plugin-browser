@@ -73,15 +73,16 @@ export function deleteWorkflow(id: string): boolean {
 
 // --- Workflow Runs ---
 
-export function createWorkflowRun(workflowId: string): WorkflowRun {
+export function createWorkflowRun(workflowId: string, initialInput?: Record<string, unknown>): WorkflowRun {
   const db = getDb();
   const id = generateId("run");
   const now = new Date().toISOString();
+  const blackboard = initialInput || {};
 
   db.prepare(`
     INSERT INTO workflow_runs (id, workflow_id, status, started_at, step_results, blackboard)
-    VALUES (?, ?, 'running', ?, '{}', '{}')
-  `).run(id, workflowId, now);
+    VALUES (?, ?, 'running', ?, '{}', ?)
+  `).run(id, workflowId, now, JSON.stringify(blackboard));
 
   // Update workflow last run
   db.prepare("UPDATE workflows SET last_run_at = ?, last_run_status = 'running', status = 'running' WHERE id = ?")
@@ -93,7 +94,7 @@ export function createWorkflowRun(workflowId: string): WorkflowRun {
     status: "running",
     startedAt: now,
     stepResults: {},
-    blackboard: {},
+    blackboard,
   };
 }
 

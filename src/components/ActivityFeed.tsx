@@ -3,11 +3,21 @@
 import type { LogEntry } from "@/lib/types";
 
 const levelColors: Record<string, string> = {
-  info: "bg-blue-500",
-  warn: "bg-amber-500",
+  info: "bg-emerald-500",
+  warn: "bg-orange-500",
   error: "bg-red-500",
   debug: "bg-zinc-600",
 };
+
+function relativeTime(ts: string): string {
+  const seconds = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
 export function ActivityFeed({ logs }: { logs: LogEntry[] }) {
   if (logs.length === 0) {
@@ -27,7 +37,7 @@ export function ActivityFeed({ logs }: { logs: LogEntry[] }) {
             <div className="flex items-center gap-2">
               <span className="font-medium text-foreground">{log.source}</span>
               <span className="text-muted-foreground">
-                {new Date(log.timestamp).toLocaleTimeString()}
+                {relativeTime(log.timestamp)}
               </span>
             </div>
             <p className="text-muted-foreground truncate">{log.message}</p>

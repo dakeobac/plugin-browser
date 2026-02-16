@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import type { AgentInstance, AgentLogEntry } from "@/lib/types";
+import { useAgentDetail } from "@/hooks/use-queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChatPanel } from "./ChatPanel";
-
-const LOG_POLL_INTERVAL = 3000;
 
 const levelColors: Record<string, string> = {
   info: "text-blue-400",
@@ -15,28 +14,11 @@ const levelColors: Record<string, string> = {
 };
 
 export function AgentDetailView({ agentId }: { agentId: string }) {
-  const [agent, setAgent] = useState<(AgentInstance & { logs: AgentLogEntry[] }) | null>(null);
-  const [error, setError] = useState("");
+  const { data: agent, error: queryError } = useAgentDetail(agentId);
+  const queryClient = useQueryClient();
   const [stopping, setStopping] = useState(false);
 
-  const fetchAgent = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/agents/${agentId}`);
-      if (res.ok) {
-        setAgent(await res.json());
-      } else {
-        setError("Agent not found");
-      }
-    } catch {
-      setError("Failed to load agent");
-    }
-  }, [agentId]);
-
-  useEffect(() => {
-    fetchAgent();
-    const interval = setInterval(fetchAgent, LOG_POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [fetchAgent]);
+  const error = queryError ? queryError.message : "";
 
   async function handleStop() {
     setStopping(true);
@@ -45,7 +27,8 @@ export function AgentDetailView({ agentId }: { agentId: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "stop" }),
     });
-    await fetchAgent();
+    await queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
+    queryClient.invalidateQueries({ queryKey: ["agents"] });
     setStopping(false);
   }
 
