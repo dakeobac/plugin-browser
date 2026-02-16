@@ -7,6 +7,7 @@ export interface AgentOptions {
   maxTurns?: number;
   permissionMode?: string;
   resumeSessionId?: string;
+  mcpServers?: Record<string, { command: string; args: string[]; env?: Record<string, string> }>;
 }
 
 export interface AgentHandle {
@@ -36,6 +37,9 @@ export function startAgent(options: AgentOptions): AgentHandle {
   }
   if (options.resumeSessionId) {
     queryOptions.resume = options.resumeSessionId;
+  }
+  if (options.mcpServers) {
+    queryOptions.mcpServers = options.mcpServers;
   }
 
   const q = query({ prompt: options.prompt, options: queryOptions });

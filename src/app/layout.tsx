@@ -82,6 +82,18 @@ export default function RootLayout({
                     Chat
                   </Link>
                   <Link
+                    href="/workflows"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Workflows
+                  </Link>
+                  <Link
+                    href="/teams"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Teams
+                  </Link>
+                  <Link
                     href="/connectors"
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
