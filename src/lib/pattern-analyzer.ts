@@ -227,7 +227,7 @@ function detectDomainGroups(fingerprints: PluginFingerprint[]): DomainGroup[] {
 
 // --- Main entry point ---
 
-export function analyzePatterns(plugins: PluginSummary[]): PatternAnalysis {
+export function analyzePatterns(plugins: PluginSummary[]): PatternAnalysis & { fingerprints: PluginFingerprint[] } {
   const fingerprints = buildFingerprints(plugins);
   const commandPatterns = detectCommandPatterns(fingerprints);
   const structuralPatterns = detectStructuralPatterns(fingerprints);
@@ -237,5 +237,6 @@ export function analyzePatterns(plugins: PluginSummary[]): PatternAnalysis {
     commandPatterns,
     structuralPatterns,
     domainGroups,
+    fingerprints,
   };
 }

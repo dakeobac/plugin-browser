@@ -6,7 +6,7 @@ import type { AgentInstanceSummary, PluginSummary } from "@/lib/types";
 import { AgentInstanceCard } from "./AgentInstanceCard";
 import { AgentConfigDialog } from "./AgentConfigDialog";
 
-const POLL_INTERVAL = 5000;
+const POLL_INTERVAL = 15000;
 
 export function AgentLaunchpad({ plugins }: { plugins: PluginSummary[] }) {
   const searchParams = useSearchParams();

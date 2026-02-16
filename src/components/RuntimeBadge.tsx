@@ -24,10 +24,8 @@ export function RuntimeBadge() {
     }
 
     poll();
-    const interval = setInterval(poll, 10_000);
     return () => {
       cancelled = true;
-      clearInterval(interval);
     };
   }, []);
 

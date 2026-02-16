@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { AgentInstance, AgentLogEntry } from "@/lib/types";
 import { ChatPanel } from "./ChatPanel";
 
-const LOG_POLL_INTERVAL = 3000;
+const LOG_POLL_INTERVAL = 10000;
 
 const levelColors: Record<string, string> = {
   info: "text-blue-400",

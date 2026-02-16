@@ -19,14 +19,14 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 export function ObservatoryDashboard({ initialStats }: { initialStats: ObservatoryStats }) {
   const [stats, setStats] = useState(initialStats);
 
-  // Refresh every 10s
+  // Refresh every 30s
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch("/api/observatory");
         if (res.ok) setStats(await res.json());
       } catch { /* keep existing */ }
-    }, 10000);
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 

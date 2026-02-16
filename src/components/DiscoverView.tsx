@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import type {
   PatternAnalysis,
   PluginSuggestion,
@@ -53,88 +53,89 @@ export function DiscoverView({
     status: "idle",
   });
 
-  // Fire off AI analysis in background when fingerprints are available
-  useEffect(() => {
+  // AI analysis — triggered by button click, not auto-fire
+  const abortRef = useRef<AbortController | null>(null);
+
+  const runAiAnalysis = useCallback(async () => {
     if (!fingerprints || fingerprints.length === 0) return;
 
-    setAiAnalysis((prev) => ({ ...prev, status: "loading" }));
-
+    // Abort any in-flight request
+    abortRef.current?.abort();
     const controller = new AbortController();
+    abortRef.current = controller;
 
-    (async () => {
-      try {
-        const response = await fetch("/api/ai-analysis", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plugins: fingerprints }),
-          signal: controller.signal,
-        });
+    setAiAnalysis({ patterns: [], suggestions: [], status: "loading" });
 
-        if (!response.ok) {
-          setAiAnalysis((prev) => ({
-            ...prev,
-            status: "error",
-            error: `API returned ${response.status}`,
-          }));
-          return;
-        }
+    try {
+      const response = await fetch("/api/ai-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plugins: fingerprints }),
+        signal: controller.signal,
+      });
 
-        const reader = response.body?.getReader();
-        if (!reader) return;
+      if (!response.ok) {
+        setAiAnalysis((prev) => ({
+          ...prev,
+          status: "error",
+          error: `API returned ${response.status}`,
+        }));
+        return;
+      }
 
-        const decoder = new TextDecoder();
-        let buffer = "";
+      const reader = response.body?.getReader();
+      if (!reader) return;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const json = line.slice(6).trim();
-            if (!json) continue;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
-            try {
-              const event = JSON.parse(json);
-              if (event.type === "result") {
-                setAiAnalysis({
-                  patterns: event.patterns || [],
-                  suggestions: event.suggestions || [],
-                  status: "done",
-                });
-              } else if (event.type === "error") {
-                setAiAnalysis((prev) => ({
-                  ...prev,
-                  status: "error",
-                  error: event.message,
-                }));
-              }
-            } catch {
-              // skip malformed json
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6).trim();
+          if (!json) continue;
+
+          try {
+            const event = JSON.parse(json);
+            if (event.type === "result") {
+              setAiAnalysis({
+                patterns: event.patterns || [],
+                suggestions: event.suggestions || [],
+                status: "done",
+              });
+            } else if (event.type === "error") {
+              setAiAnalysis((prev) => ({
+                ...prev,
+                status: "error",
+                error: event.message,
+              }));
             }
+          } catch {
+            // skip malformed json
           }
         }
-
-        // If we never got a result event, mark as done
-        setAiAnalysis((prev) =>
-          prev.status === "loading" ? { ...prev, status: "done" } : prev
-        );
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          setAiAnalysis((prev) => ({
-            ...prev,
-            status: "error",
-            error: (err as Error).message,
-          }));
-        }
       }
-    })();
 
-    return () => controller.abort();
+      // If we never got a result event, mark as done
+      setAiAnalysis((prev) =>
+        prev.status === "loading" ? { ...prev, status: "done" } : prev
+      );
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setAiAnalysis((prev) => ({
+          ...prev,
+          status: "error",
+          error: (err as Error).message,
+        }));
+      }
+    }
   }, [fingerprints]);
 
   function handleCreateFromSuggestion(suggestion: PluginSuggestion) {
@@ -277,6 +278,8 @@ export function DiscoverView({
             status={aiAnalysis.status}
             error={aiAnalysis.error}
             patterns={aiAnalysis.patterns}
+            onRunAnalysis={runAiAnalysis}
+            hasFingerprints={!!fingerprints && fingerprints.length > 0}
           />
 
           {analysis.structuralPatterns.length === 0 &&
@@ -316,6 +319,8 @@ export function DiscoverView({
             status={aiAnalysis.status}
             error={aiAnalysis.error}
             suggestions={aiAnalysis.suggestions}
+            onRunAnalysis={runAiAnalysis}
+            hasFingerprints={!!fingerprints && fingerprints.length > 0}
           />
 
           {suggestions.length === 0 &&
@@ -345,10 +350,14 @@ function AiInsightsSection({
   status,
   error,
   patterns,
+  onRunAnalysis,
+  hasFingerprints,
 }: {
   status: AiAnalysisResult["status"];
   error?: string;
   patterns: AiPattern[];
+  onRunAnalysis: () => void;
+  hasFingerprints: boolean;
 }) {
   return (
     <div>
@@ -362,7 +371,33 @@ function AiInsightsSection({
             Analyzing with OpenCode...
           </span>
         )}
+        {status === "idle" && (
+          <button
+            onClick={onRunAnalysis}
+            disabled={!hasFingerprints}
+            className="rounded-md bg-violet-500/10 px-2.5 py-1 text-xs font-medium text-violet-400 transition-colors hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Run AI Analysis
+          </button>
+        )}
+        {(status === "done" || status === "error") && (
+          <button
+            onClick={onRunAnalysis}
+            disabled={!hasFingerprints}
+            className="rounded-md bg-violet-500/10 px-2.5 py-1 text-xs font-medium text-violet-400 transition-colors hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Re-run
+          </button>
+        )}
       </div>
+
+      {status === "idle" && patterns.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border bg-card/50 p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Click &ldquo;Run AI Analysis&rdquo; to analyze plugin patterns with OpenCode
+          </p>
+        </div>
+      )}
 
       {status === "loading" && patterns.length === 0 && (
         <div className="rounded-lg border border-border bg-card/50 p-8 text-center">
@@ -397,10 +432,14 @@ function AiSuggestionsSection({
   status,
   error,
   suggestions,
+  onRunAnalysis,
+  hasFingerprints,
 }: {
   status: AiAnalysisResult["status"];
   error?: string;
   suggestions: AiSuggestion[];
+  onRunAnalysis: () => void;
+  hasFingerprints: boolean;
 }) {
   return (
     <div>
@@ -414,7 +453,33 @@ function AiSuggestionsSection({
             Generating suggestions...
           </span>
         )}
+        {status === "idle" && (
+          <button
+            onClick={onRunAnalysis}
+            disabled={!hasFingerprints}
+            className="rounded-md bg-violet-500/10 px-2.5 py-1 text-xs font-medium text-violet-400 transition-colors hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Run AI Analysis
+          </button>
+        )}
+        {(status === "done" || status === "error") && (
+          <button
+            onClick={onRunAnalysis}
+            disabled={!hasFingerprints}
+            className="rounded-md bg-violet-500/10 px-2.5 py-1 text-xs font-medium text-violet-400 transition-colors hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Re-run
+          </button>
+        )}
       </div>
+
+      {status === "idle" && suggestions.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border bg-card/50 p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Click &ldquo;Run AI Analysis&rdquo; to generate AI-powered suggestions
+          </p>
+        </div>
+      )}
 
       {status === "loading" && suggestions.length === 0 && (
         <div className="rounded-lg border border-border bg-card/50 p-8 text-center">

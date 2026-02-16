@@ -39,7 +39,7 @@ export function ActiveAgentsPanel({ initialAgents }: { initialAgents: AgentInsta
       }
     }
 
-    const interval = setInterval(poll, 5_000);
+    const interval = setInterval(poll, 30_000);
     return () => {
       cancelled = true;
       clearInterval(interval);
