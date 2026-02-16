@@ -70,10 +70,16 @@ export default function RootLayout({
                     Discover
                   </Link>
                   <Link
+                    href="/agents"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Agents
+                  </Link>
+                  <Link
                     href="/agent"
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    Agent
+                    Chat
                   </Link>
                   <Link
                     href="/wiki"

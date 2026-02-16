@@ -14,6 +14,7 @@ export function ChatPanel({
   compact,
   onSessionCreated,
   platform = "claude-code",
+  apiEndpoint,
 }: {
   initialPrompt?: string;
   cwd?: string;
@@ -22,6 +23,7 @@ export function ChatPanel({
   compact?: boolean;
   onSessionCreated?: (sessionId: string) => void;
   platform?: Platform;
+  apiEndpoint?: { start: string; resume: string };
 }) {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState("");
@@ -254,20 +256,22 @@ export function ChatPanel({
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Route to the correct API based on platform
-      const apiBase = platform === "opencode" ? "/api/agent/opencode" : "/api/agent";
+      // Use custom endpoint if provided, otherwise route by platform
+      const defaultBase = platform === "opencode" ? "/api/agent/opencode" : "/api/agent";
+      const startUrl = apiEndpoint?.start ?? `${defaultBase}/start`;
+      const resumeUrl = apiEndpoint?.resume ?? `${defaultBase}/resume`;
 
       try {
         let response: Response;
         if (sessionIdRef.current) {
-          response = await fetch(`${apiBase}/resume`, {
+          response = await fetch(resumeUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sessionId: sessionIdRef.current, message: text.trim() }),
             signal: controller.signal,
           });
         } else {
-          response = await fetch(`${apiBase}/start`, {
+          response = await fetch(startUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -289,7 +293,7 @@ export function ChatPanel({
         }
       }
     },
-    [cwd, systemPrompt, processStream, platform]
+    [cwd, systemPrompt, processStream, platform, apiEndpoint]
   );
 
   // Stable ref for sendMessage to avoid re-triggering the initial prompt effect
