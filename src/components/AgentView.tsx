@@ -12,11 +12,13 @@ export function AgentView() {
   const searchParams = useSearchParams();
   const pluginName = searchParams.get("plugin");
   const cwd = searchParams.get("cwd") || undefined;
+  const promptParam = searchParams.get("prompt");
+  const platformParam = searchParams.get("platform") as Platform | null;
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [chatKey, setChatKey] = useState(0); // force remount ChatPanel
-  const [platform, setPlatform] = useState<Platform>("claude-code");
+  const [platform, setPlatform] = useState<Platform>(platformParam === "opencode" ? "opencode" : "claude-code");
   const [e2bAvailable, setE2bAvailable] = useState(false);
 
   useEffect(() => {
@@ -158,6 +160,7 @@ export function AgentView() {
             sessionId={sessionId || undefined}
             cwd={cwd}
             systemPrompt={platform === "claude-code" ? systemPrompt : undefined}
+            initialPrompt={promptParam || undefined}
             onSessionCreated={handleSessionCreated}
             platform={platform}
           />

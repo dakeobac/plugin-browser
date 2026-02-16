@@ -11,10 +11,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
+- **Engram** — Agent workbench for Claude Code and OpenCode
 - Next.js 16 App Router with React 19, TypeScript 5, Tailwind CSS 4
-- Dark-themed plugin marketplace UI for browsing Claude Code plugins
-- Server components load data from filesystem; client components handle interactivity
+- Server components load data from filesystem + SQLite; client components handle interactivity
 - Path alias: `@/*` → `./src/*`
+- Homepage (`/`) is the `EngramDashboard` — command box, stats, agents, teams, activity feed
+- Navigation uses grouped dropdowns: Dashboard, Workbench (Agents/Chat/Teams/Workflows), Marketplace (Browse/Discover/Ecosystem/Connectors), Observatory
 
 ## Data Flow
 
@@ -28,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `src/app/` — Pages and API routes (App Router)
 - `src/app/api/plugins/route.ts` — POST endpoint for install/uninstall/enable/disable via claude CLI
-- `src/components/` — All client components (PluginGrid, PluginCard, PluginDetail, MarketplaceTabs, SearchBar)
+- `src/components/` — All client components (EngramDashboard, CommandBox, StatStrip, ActiveAgentsPanel, QuickLaunchPanel, NavDropdown, RuntimeBadge, PluginGrid, PluginCard, PluginDetail, etc.)
 - `src/lib/` — Server-side utilities (types, marketplace-loader, plugin-parser, install-state)
 
 ## Plugin Data Model
@@ -45,6 +47,18 @@ Browser marketplace IDs map to CLI marketplace names:
 - `local` → `local`
 - `official` → `claude-code-plugins`
 - `community` → `claude-plugins-official`
+
+## Git Workflow
+
+Agreed with collaborator Jet (gcoulby). Follow this for all work in this repo.
+
+1. Always work on the `develop` branch — never push to `main` directly
+2. Before starting any task, create a GitHub issue/ticket first
+3. Create a feature branch from `develop` named after the ticket (e.g. `feature/12-add-search`)
+4. When work is done, open a PR from the feature branch into `develop`
+5. Never push directly to `develop` or `main` — always use PRs
+6. If a branch goes off track or the output is bad, just delete it — this is a feature, not a failure. Branches are cheap checkpoints for AI-generated code.
+7. After merging a PR, delete the feature branch
 
 ## Conventions
 
