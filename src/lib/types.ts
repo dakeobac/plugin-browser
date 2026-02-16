@@ -489,6 +489,70 @@ export interface SandboxInstance {
 
 export type RuntimeType = "claude-code" | "opencode" | "e2b";
 
+// --- Observability types ---
+
+export interface AgentTrace {
+  traceId: string;
+  agentId: string;
+  agentName?: string;
+  runtime: AgentRuntime;
+  promptPreview?: string;
+  startedAt: string;
+  completedAt?: string;
+  status: "running" | "completed" | "error";
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalCost?: number;
+  error?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TraceSpan {
+  spanId: string;
+  traceId: string;
+  parentSpanId?: string;
+  name: string;
+  spanType?: string;
+  startedAt: string;
+  durationMs: number;
+  status: "running" | "completed" | "error";
+  error?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface LogEntry {
+  id: number;
+  timestamp: string;
+  level: "info" | "warn" | "error" | "debug";
+  source: string;
+  sourceId?: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CostSummary {
+  date: string;
+  agentId: string;
+  runtime: AgentRuntime;
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalCost: number;
+  traceCount: number;
+}
+
+export interface ObservatoryStats {
+  totalTraces: number;
+  activeAgents: number;
+  totalCost: number;
+  totalTokens: number;
+  errorRate: number;
+  recentActivity: LogEntry[];
+  costByDay: CostSummary[];
+  tracesByAgent: { agentId: string; agentName: string; count: number }[];
+}
+
 // --- Background Build types ---
 
 export type BuildStatus = "building" | "done" | "error";

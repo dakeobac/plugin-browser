@@ -88,6 +88,12 @@ export default function RootLayout({
                     Connectors
                   </Link>
                   <Link
+                    href="/observatory"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Observatory
+                  </Link>
+                  <Link
                     href="/wiki"
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >

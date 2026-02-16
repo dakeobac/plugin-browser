@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { startAgent } from "@/lib/claude-process";
+import { createTrace, instrumentSend } from "@/lib/trace-store";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const trace = createTrace({
+    agentId: "chat",
+    agentName: "Chat",
+    runtime: "claude-code",
+    promptPreview: prompt.slice(0, 200),
+  });
+
   const agent = startAgent({ prompt, cwd, systemPrompt, maxTurns, permissionMode });
 
   const stream = new ReadableStream({
@@ -21,7 +29,7 @@ export async function POST(req: NextRequest) {
       const encoder = new TextEncoder();
       let closed = false;
 
-      function send(data: unknown) {
+      function rawSend(data: unknown) {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -30,7 +38,9 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      send({ type: "status", message: "Starting Claude..." });
+      const send = instrumentSend(trace.traceId, rawSend);
+
+      rawSend({ type: "status", message: "Starting Claude..." });
 
       (async () => {
         try {
